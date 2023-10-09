@@ -4,6 +4,7 @@ close all;
 
 lambda = 20; 
 noise = 0.001;
+createGif=0
 
 % Read in image that shows our environment
 img = rgb2gray(imread('room.png'));
@@ -27,22 +28,31 @@ totalObs = totalObs(sortIdx,:);
 % Define function for whittle kernel
 cov_func = @(pos1, pos2)( pdist2(pos1, pos2)/(2*lambda).*besselk(1, eps+(pdist2(pos1, pos2))*lambda)); 
 obs = [];
+
+% Testing points
+[X, Y] = meshgrid(-10:0.1:10, -10:0.1:10);
+Qpoint(:,1) = X(:);
+Qpoint(:,2) = Y(:);
+
 % Amount of frames the points should be constructed in
-steps = 50;
+steps = 10;
+
+% points per step
+interv = int32(floor(size(totalObs,1)/steps));
+
 % Loop until all points are used as observation
-for i=1:steps
-    % points per step
-    interv = int32(floor(size(totalObs,1)/steps));
+for i=1:steps+1
     
     % Take in all observations including the ones from current step
-    obs = totalObs(1:1:i*interv,:); 
+    if i == steps+1
+        % last step: we add the remaining observations (close the loop)
+        obs = totalObs;
+    else
+        obs = totalObs(1:1:i*interv,:);
+    end
+    
     N_obs = size(obs, 1); 
 
-    % Testing points
-    [X, Y] = meshgrid(-10:0.1:10, -10:0.1:10);
-    Qpoint(:,1) = X(:);
-    Qpoint(:,2) = Y(:);
-    
     % Calculate covariances
     K = cov_func(obs, obs); 
     k = cov_func(Qpoint, obs); 
@@ -60,6 +70,7 @@ for i=1:steps
 
     fprintf('Finish gaussian regression!\n\n');
 
+    figure(1)
     hold on;
     cla;
     % colormap for surf
@@ -70,12 +81,19 @@ for i=1:steps
     
     % Plot observation points
     alpha 1;
-    % Old observations are black
-    if(i>1)
-        plot(obs(1:((i-1)*interv)+1, 1), obs(1:((i-1)*interv)+1, 2), 'ko', 'MarkerFaceColor', 'k'); 
+    
+    if i == steps+1
+        % last step: show the remainder of the points
+        plot(obs(:, 1), obs(:, 2), 'ko', 'MarkerFaceColor', 'k');
+    else 
+        % Old observations are black
+        if(i>1)
+            plot(obs(1:((i-1)*interv)+1, 1), obs(1:((i-1)*interv)+1, 2), 'ko', 'MarkerFaceColor', 'k');
+        end
+        % New observations are white
+        plot(obs(((i-1)*interv)+1:i*interv, 1), obs(((i-1)*interv)+1:i*interv, 2), 'ws','MarkerFaceColor', 'w');
     end
-    % New observations are red
-    plot(obs(((i-1)*interv)+1:i*interv, 1), obs(((i-1)*interv)+1:i*interv, 2), 'ko', 'MarkerFaceColor', 'r'); 
+    
     % Fix limits and view
     xlim([-10, 10])
     ylim([-10, 10])
@@ -88,14 +106,19 @@ for i=1:steps
     camlight; 
     lighting phong;
 
-    set(gca,'FontSize',15);
+    set(gca,'FontSize',13);
     title('DistanceField from loaded Image');
     
     % create the gif 
     % needs https://de.mathworks.com/matlabcentral/fileexchange/63239-gif
-    if(i == 1)
-        gif('animatedDistField.gif', 'DelayTime',1/10)
-    else
-        gif
+    if createGif
+        if(i == 1)
+            gif('animatedDistField.gif', 'DelayTime',1)
+        else
+            gif
+        end
     end
 end
+
+
+
