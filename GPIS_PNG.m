@@ -4,10 +4,10 @@ close all;
 
 lambda = 20; 
 noise = 0.001;
-createGif=0
+createGif=1
 
 % Read in image that shows our environment
-img = rgb2gray(imread('room.png'));
+img = rgb2gray(imread('input/ACC2.png'));
 % Take all black pixels
 [row, col] = find(img==0);
 % Scale the image so that each pixel represents a point in space. Pixel
@@ -35,7 +35,7 @@ Qpoint(:,1) = X(:);
 Qpoint(:,2) = Y(:);
 
 % Amount of frames the points should be constructed in
-steps = 10;
+steps = 20;
 
 % points per step
 interv = int32(floor(size(totalObs,1)/steps));
@@ -98,7 +98,7 @@ for i=1:steps+1
     xlim([-10, 10])
     ylim([-10, 10])
     zlim([0, 15])
-    view(-170,50);
+    view(+120,70);
     grid on;
     
     % Set shading settings for beautiful plotting
@@ -107,13 +107,13 @@ for i=1:steps+1
     lighting phong;
 
     set(gca,'FontSize',13);
-    title('DistanceField from loaded Image');
+    title('Log-GPIS');
     
     % create the gif 
     % needs https://de.mathworks.com/matlabcentral/fileexchange/63239-gif
     if createGif
         if(i == 1)
-            gif('animatedDistField.gif', 'DelayTime',1)
+            gif('output/output.gif', 'DelayTime',0.4)
         else
             gif
         end
